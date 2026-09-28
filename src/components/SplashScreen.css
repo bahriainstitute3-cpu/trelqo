@@ -1,0 +1,50 @@
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+.splash-screen--fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-screen__logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 20px; /* Amazon-jaisa slight rounded corner; hata bhi sakte ho */
+  object-fit: contain;
+}
+
+.splash-screen__text {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+.splash-screen__wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.splash-screen__text {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.splash-screen__arrow {
+  width: 90px;
+  height: 16px;
+  margin-top: 2px;
+}

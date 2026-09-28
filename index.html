@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trelqo — Shop smarter</title>
+    <meta name="description" content="Trelqo— a modern shopping experience." />
+
+    <!-- Favicon was a 1.2 MB PNG that every visitor downloaded on every
+         page load. Now it's a 7 KB 64px version. -->
+    <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.PNG?v=2" />
+    <meta name="theme-color" content="#111827" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Trelqo" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.PNG?v=2" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://firestore.googleapis.com" />
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
+    <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+
+    <!-- Fonts are loaded WITHOUT blocking the first paint. The stylesheet is
+         requested as print media (non-blocking) and switched to all once it
+         has arrived; text renders immediately in the fallback font and swaps
+         in when the webfont is ready. Trimmed to the weights actually used. -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Manrope:wght@400;600;700;800&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Manrope:wght@400;600;700;800&display=swap"
+      />
+    </noscript>
+    <!-- App shell: painted by the browser the instant the HTML arrives, long
+         before React has finished downloading and booting. Without this the
+         user stared at a blank white screen for the whole JS download. React
+         wipes this out automatically when it mounts into #root. -->
+    <style>
+      :root { --sh-line: #e7e2d8; --sh-bg: #faf7f2; }
+      html, body { margin: 0; background: var(--sh-bg); }
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      @keyframes sh-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .55 } }
+      .sh-boot { animation: sh-pulse 1.2s ease-in-out infinite; }
+      .sh-block { background: #ece7dd; border-radius: 14px; }
+      .sh-wrap { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+      .sh-bar { height: 68px; background: #fff; border-bottom: 1px solid var(--sh-line); display: flex; align-items: center; }
+      .sh-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 18px; }
+      @media (max-width: 1280px) { .sh-grid { grid-template-columns: repeat(5, 1fr); } }
+      @media (max-width: 1024px) { .sh-grid { grid-template-columns: repeat(4, 1fr); } }
+      @media (max-width: 640px)  { .sh-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="sh-boot">
+        <div class="sh-bar">
+          <div class="sh-wrap" style="display:flex;align-items:center;gap:16px;width:100%">
+            <div class="sh-block" style="width:36px;height:36px;border-radius:10px"></div>
+            <div class="sh-block" style="width:120px;height:18px"></div>
+            <div class="sh-block" style="flex:1;height:38px;border-radius:999px"></div>
+          </div>
+        </div>
+        <div class="sh-wrap" style="padding-top:28px">
+          <div class="sh-block" style="width:100%;aspect-ratio:2.35/1;max-height:410px"></div>
+          <div style="display:flex;gap:14px;margin:36px 0 40px;overflow:hidden">
+            <div class="sh-block" style="min-width:110px;height:96px"></div>
+            <div class="sh-block" style="min-width:110px;height:96px"></div>
+            <div class="sh-block" style="min-width:110px;height:96px"></div>
+            <div class="sh-block" style="min-width:110px;height:96px"></div>
+            <div class="sh-block" style="min-width:110px;height:96px"></div>
+            <div class="sh-block" style="min-width:110px;height:96px"></div>
+          </div>
+          <div class="sh-grid">
+            <div class="sh-block" style="aspect-ratio:3/4"></div>
+            <div class="sh-block" style="aspect-ratio:3/4"></div>
+            <div class="sh-block" style="aspect-ratio:3/4"></div>
+            <div class="sh-block" style="aspect-ratio:3/4"></div>
+            <div class="sh-block" style="aspect-ratio:3/4"></div>
+            <div class="sh-block" style="aspect-ratio:3/4"></div>
+            <div class="sh-block" style="aspect-ratio:3/4"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

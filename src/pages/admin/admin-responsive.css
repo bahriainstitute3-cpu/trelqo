@@ -1,0 +1,134 @@
+/* ==========================================================================
+   Admin Panel — Responsive Utilities (Mobile / Tablet / Laptop)
+   --------------------------------------------------------------------------
+   IMPORTANT: every rule here lives inside a @media query. Nothing in this
+   file changes how the admin panel looks on laptop/desktop screens above
+   the breakpoints — it only adds mobile & tablet behaviour on top of the
+   existing inline styles, per request ("koi changes nhi kerna").
+   ========================================================================== */
+
+/* ---------- Sidebar shell (AdminLayout) ---------- */
+@media (max-width: 900px) {
+  .admin-shell {
+    flex-direction: column !important;
+    min-height: auto !important;
+  }
+  .admin-sidebar {
+    width: 100% !important;
+    padding: 6px 0 !important;
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-sidebar-label {
+    display: none !important;
+  }
+  .admin-sidebar-link {
+    padding: 10px 16px !important;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .admin-main {
+    padding: 18px 16px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-main {
+    padding: 14px 10px !important;
+  }
+}
+
+/* ---------- Grids: stat cards / two-column sections / form rows ---------- */
+@media (max-width: 1024px) {
+  .admin-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 480px) {
+  .admin-grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-grid-2c,
+  .admin-grid-3c {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ---------- Page headers (title + action button/filter) ---------- */
+@media (max-width: 640px) {
+  .admin-page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .admin-page-header > * {
+    width: 100%;
+  }
+}
+
+/* ---------- Rows that should stack on small screens ---------- */
+@media (max-width: 700px) {
+  .admin-row-stack {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .admin-row-stack > * {
+    width: 100%;
+  }
+}
+
+/* ---------- Rows that just need to wrap instead of overflow ---------- */
+@media (max-width: 640px) {
+  .admin-row-wrap {
+    flex-wrap: wrap !important;
+  }
+  .admin-row-wrap > * {
+    flex: 1 1 auto;
+  }
+}
+
+/* ---------- Modals / receipts (Orders page) ---------- */
+@media (max-width: 640px) {
+  .admin-modal-box {
+    max-width: 100% !important;
+    padding: 14px !important;
+  }
+  .admin-receipt {
+    padding: 16px !important;
+  }
+  .admin-receipt-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .admin-receipt-grid > div {
+    text-align: left !important;
+  }
+  .admin-modal-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    text-align: left !important;
+  }
+  .admin-modal-actions button {
+    margin-right: 0 !important;
+    flex: 1 1 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-receipt {
+    padding: 10px !important;
+  }
+  .admin-receipt-title {
+    font-size: 30px !important;
+  }
+}

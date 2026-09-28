@@ -1,0 +1,203 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin'];
+    }
+    function isSettingsAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'bahriainstitute3@gmail.com'
+      );
+    }
+    function isPrivilegedEmail() {
+      return request.auth.token.email in [
+        'anusch2026@gmail.com',
+        'bahriainstitute3@gmail.com'
+      ];
+    }
+    // Keep in sync with SELLER_EMAIL in src/lib/allowedEmails.js.
+    function isSeller() {
+      return isSignedIn() && (
+        request.auth.token.email == 'anusch2026@gmail.com' ||
+        request.auth.token.email == 'bahriainstitute3@gmail.com'
+      );
+    }
+    function hasProductPermission() {
+      return isSignedIn() && (
+        isAdmin() ||
+        isSeller() ||
+        (
+          exists(/databases/$(database)/documents/productPermissions/$(request.auth.token.email)) &&
+          get(/databases/$(database)/documents/productPermissions/$(request.auth.token.email)).data.granted == true
+        )
+      );
+    }
+    function isApprovedSeller(sellerId) {
+      return isSignedIn() && sellerId != '' &&
+        exists(/databases/$(database)/documents/sellers/$(sellerId)) &&
+        get(/databases/$(database)/documents/sellers/$(sellerId)).data.userId == request.auth.uid &&
+        get(/databases/$(database)/documents/sellers/$(sellerId)).data.sellerStatus == 'APPROVED';
+    }
+
+    // Users can read/update their own profile; only admins can change `role` or `blocked`.
+    // Note: email/password signup is restricted to ALLOWED_EMAILS in the app's
+    // signup() function; Google sign-in is open to any account. Both create
+    // this same /users/{uid} doc, so the rule below allows any signed-in
+    // owner to create their own profile.
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin() || isSettingsAdmin();
+      allow create: if isOwner(userId) && (
+        (
+          request.resource.data.role == 'customer' &&
+          request.resource.data.canAddProduct == false
+        ) || (
+          isPrivilegedEmail() &&
+          request.resource.data.role == 'admin' &&
+          request.resource.data.canAddProduct == true
+        )
+      );
+      allow update: if isAdmin() || (
+        isOwner(userId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'email', 'phone', 'photoURL', 'updatedAt'
+        ])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Catalog: public read. Admins can write anything; the seller account can
+    // additionally create/edit/delete products (their "Add Product" feature).
+    match /categories/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /products/{id} {
+      allow read: if true;
+      allow create: if isSignedIn() &&
+        request.resource.data.ownerEmail == request.auth.token.email &&
+        (hasProductPermission() || isApprovedSeller(request.resource.data.sellerId));
+      allow update: if isAdmin() || (isSignedIn() && (
+        (resource.data.ownerEmail == request.auth.token.email &&
+          (hasProductPermission() || isApprovedSeller(resource.data.sellerId))) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingAvg', 'ratingCount']) ||
+        // A signed-in buyer placing an order needs to decrement `stock` on a
+        // product they don't own (that's what was throwing "Missing or
+        // insufficient permissions" on Place Order). Allow that ONE field to
+        // change, and only downward, so this can't be used to restock or
+        // touch anything else on the product.
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']) &&
+          request.resource.data.stock < resource.data.stock
+        ) ||
+        // Checkout also records the number of units sold in the same
+        // transaction. Keep the change tied exactly to the stock decrement.
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'soldCount']) &&
+          request.resource.data.stock < resource.data.stock &&
+          request.resource.data.soldCount == resource.data.get('soldCount', 0) + (resource.data.stock - request.resource.data.stock)
+        )
+      ));
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.ownerEmail == request.auth.token.email &&
+        (hasProductPermission() || isApprovedSeller(resource.data.sellerId)));
+    }
+
+    // Seller applications: a signed-in customer may submit and view only
+    // their own application; seller management stays admin-only.
+    match /sellers/{sellerId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.email == request.auth.token.email;
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // Orders: a customer can create their own order and read only their own
+    // orders; only admins can update status/payment or read all orders.
+    match /orders/{id} {
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.customerEmail == request.auth.token.email &&
+        !(request.resource.data.paymentMethod == 'cod' && request.resource.data.paymentStatus == 'failed');
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin() &&
+        !(request.resource.data.paymentMethod == 'cod' && request.resource.data.paymentStatus == 'failed');
+      allow delete: if false;
+    }
+
+    // Coupons, banners, delivery zones, settings, admin activity logs: admin-only.
+    match /coupons/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /discounts/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /banners/{id} { allow read: if true; allow write: if isAdmin() || isSettingsAdmin(); }
+    match /deliveryZones/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /users/{userId}/addresses/{addressId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create, update, delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+    match /appSettings/{id} { allow read: if true; allow write: if isAdmin() || isSettingsAdmin(); }
+    match /adminActivityLogs/{id} { allow read, write: if isAdmin(); }
+
+    match /productPermissions/{email} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.token.email == email);
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /wishlists/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+
+    match /notifications/{id} {
+      allow read: if isSignedIn() && (
+        resource.data.recipientEmail == request.auth.token.email ||
+        resource.data.recipientEmail == "all" ||
+        isAdmin()
+      );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.recipientEmail == request.auth.token.email || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Only bahriainstitute3@gmail.com can add reviews (matches the "Add
+    // Review" button visibility in src/components/Reviews.jsx) — this used
+    // to be a separate, invalid rules block sitting outside the service
+    // declaration, which meant it never actually took effect and any
+    // signed-in user could write a review straight to Firestore.
+    match /reviews/{id} {
+      allow read: if true;
+      allow create: if isSignedIn() &&
+        request.auth.token.email == "bahriainstitute3@gmail.com" &&
+        request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // In-app chat between a buyer and the product's seller. Only the two
+    // participants (matched by uid or email) can read/write a conversation.
+    match /conversations/{convId} {
+      function isParticipant() {
+        return isSignedIn() && (
+          resource.data.buyerId == request.auth.uid ||
+          resource.data.sellerEmail == request.auth.token.email
+        );
+      }
+      allow create: if isSignedIn() && request.resource.data.buyerId == request.auth.uid;
+      allow read, update: if isParticipant();
+
+      match /messages/{msgId} {
+        function isConvParticipant() {
+          let conv = get(/databases/$(database)/documents/conversations/$(convId)).data;
+          return isSignedIn() && (conv.buyerId == request.auth.uid || conv.sellerEmail == request.auth.token.email);
+        }
+        allow read: if isConvParticipant();
+        allow create: if isConvParticipant() && request.resource.data.senderId == request.auth.uid;
+      }
+    }
+  }
+}

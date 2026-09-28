@@ -1,0 +1,158 @@
+.order-slip {
+  background: #fff;
+  color: #111;
+  border: 2px solid #111;
+  border-radius: 14px;
+  padding: 28px;
+  font-family: inherit;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.order-slip-head {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 2px solid #111;
+}
+
+.order-slip-wordmark {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  color: #111;
+}
+.order-slip-wordmark-arrow {
+  display: block;
+  width: 76px;
+  height: auto;
+  color: #111;
+  margin-top: 2px;
+}
+
+.order-slip-head-divider {
+  width: 2px;
+  align-self: stretch;
+  background: #111;
+  flex-shrink: 0;
+}
+
+.order-slip-title { flex: 1; min-width: 0; }
+.order-slip-title h2 { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 0.5px; }
+.order-slip-title p { margin: 4px 0 0; font-size: 11px; letter-spacing: 1px; color: #444; text-transform: uppercase; }
+
+.order-slip-meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; white-space: nowrap; }
+.order-slip-meta-icon { font-size: 26px; }
+.order-slip-meta-label { font-size: 10px; letter-spacing: 0.5px; color: #666; text-transform: uppercase; margin-top: 4px; }
+.order-slip-meta-label:first-child { margin-top: 0; }
+.order-slip-meta-value { font-size: 14px; font-weight: 800; }
+
+.order-slip-info-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 2px solid #111;
+}
+.order-slip-info-col { font-size: 13.5px; line-height: 1.7; word-break: break-word; }
+.order-slip-info-heading { font-weight: 800; font-size: 13px; margin-bottom: 6px; }
+
+.order-slip-section-label {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #444;
+  text-transform: uppercase; margin: 18px 0 8px;
+}
+
+.order-slip-table { border: 1px solid #111; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+.order-slip-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) 90px 120px 120px; align-items: center; gap: 10px; }
+.order-slip-row-head { background: #111; color: #fff; font-weight: 800; font-size: 12px; text-transform: uppercase; padding: 10px 12px; }
+.order-slip-row:not(.order-slip-row-head) { padding: 12px; border-top: 1px solid #eee; }
+.order-slip-cell-num { text-align: center; }
+.order-slip-cell-qty, .order-slip-cell-price, .order-slip-cell-total { text-align: right; }
+.order-slip-row-head .order-slip-cell-num { text-align: center; }
+
+.order-slip-product-thumb {
+  width: 44px; height: 44px; border-radius: 8px; overflow: hidden; background: #f0efe8;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px;
+}
+.order-slip-product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.order-slip-cell-product { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.order-slip-product-name { font-weight: 700; font-size: 13.5px; }
+.order-slip-product-variant { font-size: 12px; color: #666; }
+.order-slip-product-owner { font-size: 11px; color: #555; background: #f7f7f7; border-radius: 5px; padding: 3px 6px; margin-top: 4px; display: inline-block; }
+
+.order-slip-empty { padding: 16px; text-align: center; color: #666; border: 1px dashed #ccc; border-radius: 8px; }
+
+.order-slip-seller-card { border: 1px solid #ddd; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+.order-slip-seller-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.order-slip-seller-name { font-weight: 800; font-size: 15px; }
+.order-slip-seller-contact { display: flex; gap: 10px; font-size: 12.5px; color: #555; flex-wrap: wrap; }
+.order-slip-seller-bank { font-size: 13px; border-top: 1px dashed #ddd; padding-top: 8px; margin-bottom: 10px; display: grid; gap: 3px; }
+
+.order-slip-bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+  margin-top: 20px;
+}
+.order-slip-thanks { display: flex; gap: 14px; align-items: flex-start; }
+.order-slip-thanks-icon { font-size: 30px; }
+.order-slip-thanks strong { display: block; font-size: 15px; margin-bottom: 4px; }
+.order-slip-thanks p { margin: 0; font-size: 13px; color: #555; }
+
+.order-slip-summary { border: 1.5px solid #111; border-radius: 10px; padding: 16px; }
+.order-slip-summary-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 4px 0; }
+.order-slip-summary-grand {
+  border-top: 2px solid #111; margin-top: 8px; padding-top: 10px;
+  font-size: 17px; font-weight: 900;
+}
+
+.order-slip-payto { margin-top: 18px; border-top: 1px solid #eee; padding-top: 14px; }
+.order-slip-payto-card { border: 1px solid #eee; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; font-size: 13.5px; display: grid; gap: 3px; }
+.order-slip-payto-head { font-weight: 800; margin-bottom: 4px; }
+.order-slip-muted { color: #666; font-size: 13px; }
+.order-slip-payto-total { text-align: right; font-size: 14px; margin-top: 6px; }
+
+.order-slip-badges {
+  display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;
+  border-top: 1px solid #eee; margin-top: 22px; padding-top: 16px;
+  font-size: 12.5px; color: #444;
+}
+
+.order-slip-links { text-align: center; margin-top: 20px; border-top: 1px solid #eee; padding-top: 18px; }
+.order-slip-links-title { font-weight: 800; font-size: 13px; letter-spacing: 0.5px; margin-bottom: 12px; }
+.order-slip-links-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+.order-slip-link-item { display: flex; flex-direction: column; align-items: center; gap: 4px; max-width: 160px; }
+.order-slip-link-label { font-size: 12px; font-weight: 700; }
+.order-slip-link-url { font-size: 10.5px; color: #666; word-break: break-all; }
+
+/* ------------------------------------------------------------------
+   RESPONSIVE — tablet & mobile
+   ------------------------------------------------------------------ */
+@media (max-width: 720px) {
+  .order-slip { padding: 16px; border-radius: 10px; }
+  .order-slip-head { flex-wrap: wrap; gap: 12px; }
+  .order-slip-head-divider { display: none; }
+  .order-slip-wordmark { font-size: 26px; }
+  .order-slip-wordmark-arrow { width: 60px; }
+  .order-slip-title h2 { font-size: 20px; }
+  .order-slip-meta { width: 100%; justify-content: space-between; }
+  .order-slip-info-row { grid-template-columns: 1fr; gap: 14px; }
+  .order-slip-bottom-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .order-slip-row { grid-template-columns: 1fr; gap: 4px; padding: 12px !important; }
+  .order-slip-row-head { display: none; }
+  .order-slip-cell { text-align: left !important; }
+  .order-slip-cell-qty::before { content: "Qty: "; font-weight: 700; }
+  .order-slip-cell-price::before { content: "Unit price: "; font-weight: 700; }
+  .order-slip-cell-total::before { content: "Total: "; font-weight: 700; }
+  .order-slip-cell-qty, .order-slip-cell-price, .order-slip-cell-total { font-size: 12.5px; color: #444; }
+  .order-slip-links-grid { gap: 14px; }
+  .order-slip-link-item { max-width: 130px; }
+}
