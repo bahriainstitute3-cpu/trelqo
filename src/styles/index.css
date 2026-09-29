@@ -440,3 +440,149 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .cart-item-thumb { width: 60px; height: 60px; }
   .cart-item-total { width: 100%; text-align: right; padding-top: 6px; border-top: 1px solid var(--line); border-top-style: dashed; }
 }
+
+/* ==================================================================
+   MOBILE APP-STYLE UI  (phones only, <= 640px)
+   Desktop / tablet ke liye kuch change nahi. Ye block file ke end mein
+   hai taake upar ke mobile rules ko safely override kare.
+   ================================================================== */
+@media (max-width: 640px) {
+
+  /* --- Base: no sideways scroll, no zoom-on-focus, app-like feel --- */
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body {
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+  #root { overflow-x: hidden; }
+
+  /* iOS Safari zooms in on inputs smaller than 16px */
+  input, select, textarea,
+  .field input, .field select, .field textarea,
+  .language-picker-menu input {
+    font-size: 16px;
+  }
+
+  /* --- Touch: no sticky hover, real press feedback --- */
+  .grid-products > .card:hover,
+  .category-tile:hover,
+  .notification-item:hover {
+    transform: none;
+    box-shadow: var(--shadow);
+    border-color: var(--line);
+  }
+  .btn:hover:not(:disabled) {
+    transform: none;
+    box-shadow: 0 2px 0 rgba(29, 43, 40, 0.08);
+  }
+  .grid-products > .card:active,
+  .category-tile:active,
+  .notification-item:active {
+    transform: scale(0.98);
+  }
+
+  /* --- Top bar / language picker stays inside the screen --- */
+  .language-picker-menu {
+    width: min(260px, calc(100vw - 24px));
+    border-radius: 14px;
+  }
+  .language-options button { padding: 11px 10px; }
+
+  /* --- Header dropdown menu: bigger tap targets + soft entrance --- */
+  .mobile-menu {
+    min-width: 230px;
+    border-radius: 18px;
+    animation: mobile-pop .18s ease both;
+    transform-origin: top right;
+  }
+  .mobile-menu a, .mobile-menu button {
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+  }
+  .mobile-menu a:active, .mobile-menu button:active { background: var(--bg); }
+
+  /* --- Bottom navigation: rounded, pill highlight on press --- */
+  .mobile-bottom-nav {
+    border-radius: 20px 20px 0 0;
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 24px rgba(29, 43, 40, 0.1);
+  }
+  .mobile-bottom-nav a, .mobile-bottom-nav button {
+    min-height: 52px;
+    transition: background .15s ease, color .15s ease, transform .15s ease;
+  }
+  .mobile-bottom-nav a:active, .mobile-bottom-nav button:active {
+    background: #ecf3ef;
+    transform: scale(0.94);
+  }
+  .mobile-bottom-nav a.active,
+  .mobile-bottom-nav a[aria-current="page"] {
+    color: var(--teal);
+    background: #ecf3ef;
+  }
+
+  /* --- Product grid: tighter, softer cards --- */
+  .grid-products { gap: 10px; }
+  .grid-products > * { min-width: 0; contain-intrinsic-size: 260px; }
+  .grid-products > .card { border-radius: 14px; }
+
+  /* --- Category strip: hidden scrollbar, snap, rounder tiles --- */
+  .category-strip {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .category-strip::-webkit-scrollbar { display: none; }
+  .category-tile { border-radius: 16px; }
+
+  /* --- Headings a bit smaller on phones --- */
+  h1 { font-size: 26px; }
+  h2 { font-size: 20px; }
+  .section-eyebrow { font-size: 11px; }
+  .empty-state { padding: 40px 16px; }
+
+  /* --- Buttons: comfortable thumb size --- */
+  .btn { min-height: 46px; }
+  .btn-sm { min-height: 38px; }
+
+  /* --- Forms --- */
+  .field { margin-bottom: 14px; }
+  .field label { font-size: 12px; }
+  .sell-product-form { border-radius: 16px; }
+
+  /* --- Cart --- */
+  .cart-page { gap: 18px; }
+  .cart-item { border-radius: 14px; }
+  .cart-summary { border-radius: 16px; }
+  .cart-item-qty { min-height: 38px; }
+
+  /* --- Notifications --- */
+  .notification-item { border-radius: 14px; }
+
+  /* --- Admin surfaces --- */
+  .admin-modal-box { border-radius: 18px !important; }
+  .admin-row-wrap { border-radius: 14px; }
+
+  /* --- Respect users who turn animations off --- */
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-menu,
+    .sell-product-form,
+    .notifications-page,
+    .settings-stats,
+    .admin-page-header { animation: none; }
+  }
+}
+
+@keyframes mobile-pop {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* very small phones */
+@media (max-width: 360px) {
+  .container { padding-left: 12px; padding-right: 12px; }
+  .grid-products { gap: 8px; }
+  .category-tile { flex: 0 0 92px; }
+  .mobile-bottom-nav a small, .mobile-bottom-nav button small { font-size: 10px; }
+}

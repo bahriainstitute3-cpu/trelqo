@@ -584,6 +584,116 @@ export default function Home() {
           display: block;
         }
 
+        /* ============ MOBILE APP-STYLE UI (only <= 767px) ============ */
+        @media (max-width: 767px) {
+
+          .sh-page-wrap {
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+          }
+
+          /* tighter section spacing */
+          .sh-main > div,
+          .sh-main section {
+            margin-bottom: 26px !important;
+          }
+
+          .sh-main h2 {
+            font-size: 19px !important;
+            margin-bottom: 12px !important;
+          }
+
+          .section-eyebrow {
+            font-size: 11px !important;
+          }
+
+          /* Quick buttons: full-width, thumb friendly */
+          .sh-quick-row {
+            gap: 8px !important;
+          }
+          .sh-quick-row button {
+            flex: 1 1 0;
+            min-height: 46px !important;
+            font-size: 14px !important;
+          }
+
+          /* Product grid: 2 columns, compact cards */
+          .sh-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+          .sh-grid > * {
+            min-width: 0;
+          }
+
+          /* Skeleton placeholders: card-shaped instead of thin strip */
+          .sh-grid .skeleton {
+            aspect-ratio: 3 / 4 !important;
+            border-radius: 14px;
+          }
+
+          /* Category tiles: rounder, app-like */
+          .category-strip {
+            margin: 0 -12px;
+            padding: 4px 12px 10px !important;
+          }
+          .category-strip .category-tile {
+            flex: 0 0 84px !important;
+            border-radius: 16px;
+          }
+          .category-strip .category-tile > div:last-child {
+            font-size: 12px !important;
+            line-height: 1.25;
+          }
+
+          /* Info strip: swipeable row */
+          .sh-page-wrap > .container:not(.sh-main) {
+            padding: 4px 12px 0 !important;
+          }
+          .sh-page-wrap > .container:not(.sh-main) > div {
+            display: flex !important;
+            overflow-x: auto;
+            gap: 10px !important;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 6px;
+          }
+          .sh-page-wrap > .container:not(.sh-main) > div::-webkit-scrollbar {
+            display: none;
+          }
+          .sh-page-wrap > .container:not(.sh-main) > div > .card {
+            flex: 0 0 210px;
+            scroll-snap-align: start;
+            border-radius: 14px;
+          }
+
+          /* Mobile contact card */
+          .sh-mobile-contact {
+            margin-top: 28px !important;
+            margin-bottom: 20px !important;
+          }
+          .sh-mobile-contact .card {
+            border-radius: 18px;
+          }
+
+          /* Search result chips + text wrap nicely */
+          .sh-main p {
+            overflow-wrap: anywhere;
+          }
+        }
+
+        /* very small phones */
+        @media (max-width: 360px) {
+          .sh-grid {
+            gap: 8px !important;
+          }
+          .category-strip .category-tile {
+            flex: 0 0 76px !important;
+          }
+        }
+
       `}</style>
 
       {/* ====================================================
