@@ -475,7 +475,11 @@ export default function Navbar() {
             {labels.wishlist}
           </Link>
 
-          <Link to="/cart" aria-label="Cart" style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "#fff", fontSize: 11, fontWeight: 700, textDecoration: "none", position: "relative" }}>
+          <Link
+  to="/cart"
+  aria-label="Cart"
+  className="sh-topbar-hide-mobile"
+  style={{display: "flex", flexDirection: "column", alignItems: "center", color: "#fff", fontSize: 11, fontWeight: 700, textDecoration: "none", position: "relative" }}>
             <span style={{ fontSize: 20, position: "relative" }}>
               🛒
               {itemCount > 0 && (
