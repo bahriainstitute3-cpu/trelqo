@@ -178,7 +178,7 @@ img { max-width: 100%; display: block; }
 .navbar-brand { display: inline-flex; align-items: center; gap: 8px; }
 .navbar-logo { width: 34px; height: 34px; object-fit: contain; border-radius: 7px; }
 .mobile-menu-button, .mobile-menu, .mobile-bottom-nav, .mobile-header-actions { display: none; }
-.announcement-ticker { display: none; }
+.announcement-ticker { display: none !important; }
 .settings-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
 .settings-stat { padding: 16px; display: grid; gap: 4px; }
 .settings-stat strong { color: var(--teal); font-size: 26px; }
@@ -234,7 +234,6 @@ img { max-width: 100%; display: block; }
   .navbar-logo { width: 30px; height: 30px; }
   header form, .desktop-nav { display: none !important; }
   .mobile-header-actions { display: flex !important; }
-  .announcement-ticker { display: block; }
   /* Bell icon itself is hidden on mobile (bottom nav has its own bell),
      but its parent wrapper is intentionally left visible so the dropdown
      panel it controls can still open when the bottom-nav bell is tapped. */
@@ -255,8 +254,9 @@ img { max-width: 100%; display: block; }
     color: var(--ink); text-align: left; font: inherit; font-weight: 700;
   }
   .mobile-menu a:hover, .mobile-menu button:hover { background: var(--bg); }
+  /* bottom nav: items barabar baant do (3 ho ya 4, Cart add hone par bhi theek) */
   .mobile-bottom-nav {
-    display: grid; grid-template-columns: repeat(3, 1fr); position: fixed; left: 0; right: 0; bottom: 0;
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; position: fixed; left: 0; right: 0; bottom: 0;
     z-index: 50; min-height: 70px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
     background: rgba(255,255,255,.96); border-top: 1px solid var(--line); box-shadow: 0 -4px 18px rgba(29,43,40,.08);
     backdrop-filter: blur(10px);
@@ -438,5 +438,5 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width: 480px) {
   .cart-item { flex-wrap: wrap; padding: 12px; }
   .cart-item-thumb { width: 60px; height: 60px; }
-  .cart-item-total { width: 100%; text-align: right; padding-top: 6px; border-top: 1px dashed var(--line); }
+  .cart-item-total { width: 100%; text-align: right; padding-top: 6px; border-top: 1px solid var(--line); border-top-style: dashed; }
 }

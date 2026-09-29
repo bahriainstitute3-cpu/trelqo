@@ -59,7 +59,7 @@ export default function Navbar() {
   const [languageSearch, setLanguageSearch] = useState("");
   const [language, setLanguage] = useState(() => localStorage.getItem("trelqo _language") || "en");
 
-  // NEW — refs so the mobile menu can be closed by tapping outside it
+  // refs so the mobile menu can be closed by tapping outside it
   const menuButtonRef = useRef(null);
   const menuPanelRef = useRef(null);
 
@@ -71,7 +71,7 @@ export default function Navbar() {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const categoriesRef = useRef(null);
 
-  // NEW — live "as you type" suggestions under the search bar (Naheed-style):
+  // live "as you type" suggestions under the search bar (Naheed-style):
   // matching categories first, then matching product names, real substring
   // matches against the real catalog (no AI, no fuzzy guessing).
   const [allProducts, setAllProducts] = useState(() => peekProducts({ max: 5000 }) || null);
@@ -138,7 +138,7 @@ export default function Navbar() {
     };
   }, []);
 
-  // NEW — close the mobile hamburger menu when tapping outside it (the
+  // close the mobile hamburger menu when tapping outside it (the
   // toggle button itself is excluded so its own onClick can still toggle
   // normally instead of fighting with this handler).
   useEffect(() => {
@@ -156,7 +156,7 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
-  // NEW — close the mobile hamburger menu with the Escape key
+  // close the mobile hamburger menu with the Escape key
   useEffect(() => {
     if (!menuOpen) return;
     function onKey(e) {
@@ -234,7 +234,7 @@ export default function Navbar() {
     navigate(`/category/${c.id}`);
   }
 
-  // NEW — bottom-nav "Contact" tab: scrolls straight to the real Footer
+  // bottom-nav "Contact" tab: scrolls straight to the real Footer
   // (id="footer") at the bottom of the page instead of opening a new
   // section. If the footer isn't on the current page (e.g. Footer is
   // only rendered on certain routes), it goes Home first, then scrolls.
@@ -260,9 +260,11 @@ export default function Navbar() {
              hidden on mobile+tablet (they're already reachable inside the
              hamburger menu below, and via the bottom Profile tab).
           2) The mobile hamburger menu gets a tap-outside backdrop, an
-             Escape-key close, and an explicit "Close" button so it's easy
-             to dismiss.
-          Desktop layout/behaviour is completely unchanged.
+             Escape-key close, and an explicit "Close" button.
+          3) PHONE (<= 640px): main bar stays on ONE row (logo, categories,
+             menu button). Cart + Login moved to the bottom nav, so nothing
+             overflows over the page any more.
+          Desktop layout/behaviour is unchanged.
       ================================================================== */}
       <style>{`
         @media (max-width: 1023px) {
@@ -287,6 +289,37 @@ export default function Navbar() {
           font-size: 14px;
           cursor: pointer;
           color: inherit;
+        }
+
+        @media (max-width: 640px) {
+          .sh-hide-phone { display: none !important; }
+
+          header > .sh-mainbar {
+            flex-wrap: nowrap !important;
+            height: auto !important;
+            min-height: 60px;
+            padding: 8px 14px !important;
+            gap: 10px !important;
+          }
+
+          .sh-mainbar .navbar-brand {
+            flex: 0 1 auto;
+            min-width: 0;
+            max-width: none;
+          }
+
+          .sh-cat-btn {
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+          }
+
+          /* menu button was white-on-white; make it a glass button on the teal bar */
+          .sh-mainbar .mobile-menu-button {
+            background: rgba(255,255,255,0.15) !important;
+            border: 1px solid rgba(255,255,255,0.35) !important;
+            box-shadow: none !important;
+            flex: 0 0 40px;
+          }
         }
       `}</style>
 
@@ -323,7 +356,7 @@ export default function Navbar() {
 
       {/* Main bar — logo, categories, search + live suggestions, account/wishlist/cart */}
       <div
-        className="container"
+        className="container sh-mainbar"
         style={{
           display: "flex",
           alignItems: "center",
@@ -353,6 +386,7 @@ export default function Navbar() {
         <div ref={categoriesRef} style={{ position: "relative", flex: "0 0 auto" }}>
           <button
             type="button"
+            className="sh-cat-btn"
             onClick={() => setCategoriesOpen((o) => !o)}
             aria-expanded={categoriesOpen}
             style={{
@@ -464,18 +498,17 @@ export default function Navbar() {
         <NotificationBell />
 
         {/* RIGHT: Wishlist, Cart, Account/Login.
-            NEW — Wishlist / Account / Logout are hidden on mobile+tablet via
-            .sh-topbar-hide-mobile: they're already reachable in the
-            hamburger menu below, so this stops the top corner being
-            cramped. Cart, Login and the hamburger button itself stay
-            visible on every screen size. */}
+            Wishlist / Account / Logout are hidden on mobile+tablet via
+            .sh-topbar-hide-mobile. Cart + Login are hidden on PHONES only
+            (.sh-hide-phone) because the bottom nav now has Cart and
+            Login/Profile tabs. The hamburger button stays visible. */}
         <div style={{ display: "flex", alignItems: "center", gap: 18, marginLeft: "auto" }}>
           <Link to="/wishlist" className="sh-topbar-hide-mobile" style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "#fff", fontSize: 11, fontWeight: 700, textDecoration: "none" }}>
             <span style={{ fontSize: 20 }}>♡</span>
             {labels.wishlist}
           </Link>
 
-          <Link to="/cart" aria-label="Cart" style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "#fff", fontSize: 11, fontWeight: 700, textDecoration: "none", position: "relative" }}>
+          <Link to="/cart" aria-label="Cart" className="sh-hide-phone" style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "#fff", fontSize: 11, fontWeight: 700, textDecoration: "none", position: "relative" }}>
             <span style={{ fontSize: 20, position: "relative" }}>
               🛒
               {itemCount > 0 && (
@@ -507,7 +540,7 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <Link to="/login" className="btn btn-primary btn-sm">Login</Link>
+            <Link to="/login" className="btn btn-primary btn-sm sh-hide-phone" style={{ width: "auto" }}>Login</Link>
           )}
 
           <button
@@ -532,7 +565,7 @@ export default function Navbar() {
         <a href={helpSellingLink} target="_blank" rel="noreferrer" style={{ fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", color: "var(--ink)" }}>{labels.selling}</a>
       </div>
 
-      {/* NEW — semi-transparent backdrop so tapping anywhere outside the
+      {/* semi-transparent backdrop so tapping anywhere outside the
           mobile menu closes it (in addition to the toggle button, the
           Close row below, and the Escape key). */}
       {menuOpen && <div className="sh-menu-backdrop" onClick={() => setMenuOpen(false)} />}
@@ -555,6 +588,8 @@ export default function Navbar() {
           {user ? <button onClick={() => { setMenuOpen(false); logout(); }}>Logout</button> : <Link to="/login" onClick={() => setMenuOpen(false)}>Login</Link>}
         </div>
       )}
+
+      {/* Bottom nav (phones): Home · Notification · Cart · Profile/Login */}
       <nav className="mobile-bottom-nav" aria-label="Primary navigation">
         <Link to="/">
           <span>⌂</span>
@@ -564,11 +599,15 @@ export default function Navbar() {
           <span>🔔</span>
           <small>Notification</small>
         </Link>
-        <Link to="/profile">
-          <span>👤</span>
-          <small>Profile</small>
+        <Link to="/cart" className="mobile-cart-tab">
+          <span>🛒</span>
+          <small>Cart</small>
+          {itemCount > 0 && <strong>{itemCount}</strong>}
         </Link>
-        
+        <Link to={user ? "/profile" : "/login"}>
+          <span>👤</span>
+          <small>{user ? "Profile" : "Login"}</small>
+        </Link>
       </nav>
     </header>
   );

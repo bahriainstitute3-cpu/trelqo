@@ -35,7 +35,7 @@ const SOCIAL_LINKS = [
   },
   {
     name: "TikTok",
-    href: "https://www.tiktok.com/@shophub.pk",
+    href: "https://www.tiktok.com/@trelqo .pk",
     bg: "#000000",
   },
   {

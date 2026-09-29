@@ -363,77 +363,86 @@ export default function SmartSearch({ loadProducts, categories, onResults, onCle
 
   const showRecent = focused && !busy && q.trim() === "" && recent.length > 0;
 
-  const iconBtn = {
-    border: "none", background: "transparent", cursor: "pointer", padding: 0, width: 34, height: 34,
-    display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 17, borderRadius: 999, flex: "0 0 34px",
+  // hard reset so global button/input CSS can't break the layout
+  const reset = {
+    margin: 0, padding: 0, border: "none", outline: "none", boxShadow: "none", background: "transparent",
+    minWidth: 0, minHeight: 0, borderRadius: 0, appearance: "none", WebkitAppearance: "none",
+  };
+  const smallBtn = {
+    ...reset, cursor: "pointer", width: 32, height: 32, flex: "0 0 32px", borderRadius: 999,
+    display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 16, lineHeight: 1,
   };
 
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
-      <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
-        <div
-          style={{
-            flex: "1 1 auto", minWidth: 0, display: "flex", alignItems: "center", gap: 2, padding: "0 6px 0 14px",
-            background: "#fff", borderRadius: 14, minHeight: 48,
-            border: aiMode ? "2px solid #7c3aed" : focused ? "1.5px solid var(--teal)" : "1.5px solid var(--line)",
-            boxShadow: aiMode ? "0 0 0 3px rgba(124,58,237,0.12)" : "none",
+      <div
+        style={{
+          display: "flex", alignItems: "center", gap: 2, width: "100%", height: 46, boxSizing: "border-box",
+          background: "#fff", borderRadius: 999, padding: "0 4px 0 14px",
+          border: aiMode ? "2px solid #7c3aed" : "1.5px solid var(--teal)",
+        }}
+      >
+        <input
+          ref={inputRef}
+          type="text"
+          value={q}
+          enterKeyHint="search"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-label="Search products"
+          placeholder={listening ? "Listening… speak now" : "Search in Trelqo"}
+          onChange={(e) => { if (aiMode) setAiMode(false); setQ(e.target.value); }}
+          onFocus={() => { setFocused(true); loadProducts().then(() => getLocalIndex()).catch(() => {}); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); doSearch(q, { ai: aiMode, save: true }); e.currentTarget.blur(); }
+            if (e.key === "Escape") setFocused(false);
           }}
-        >
-          <span aria-hidden="true" style={{ marginRight: 6 }}>{aiMode ? "✨" : "🔍"}</span>
-          <input
-            ref={inputRef}
-            type="search"
-            value={q}
-            enterKeyHint="search"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            aria-label="Search products"
-            placeholder={listening ? "Listening… speak now" : "Search products, categories…"}
-            onChange={(e) => { if (aiMode) setAiMode(false); setQ(e.target.value); }}
-            onFocus={() => { setFocused(true); loadProducts().then(() => getLocalIndex()).catch(() => {}); }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") { e.preventDefault(); doSearch(q, { ai: aiMode, save: true }); e.currentTarget.blur(); }
-              if (e.key === "Escape") setFocused(false);
-            }}
-            style={{
-              flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent",
-              fontSize: 16, padding: "12px 0", WebkitAppearance: "none", appearance: "none",
-            }}
-          />
-          {(q || active) && (
-            <button type="button" onClick={clearAll} aria-label="Clear search" style={{ ...iconBtn, color: "var(--ink-soft)" }}>✕</button>
-          )}
-          {SR && (
-            <>
-              <button
-                type="button" onClick={() => setVoiceLang((l) => (l === "en-US" ? "ur-PK" : "en-US"))}
-                title="Voice language" aria-label={`Voice language: ${voiceLang === "en-US" ? "English" : "Urdu"}`}
-                style={{ ...iconBtn, width: "auto", flex: "0 0 auto", padding: "0 8px", fontSize: 11, fontWeight: 800, border: "1.5px solid var(--line)", height: 28 }}
-              >
-                {voiceLang === "en-US" ? "EN" : "اردو"}
-              </button>
-              <button
-                type="button" onClick={toggleVoice} aria-label={listening ? "Stop voice search" : "Voice search"}
-                style={{ ...iconBtn, background: listening ? "#fee2e2" : "transparent" }}
-              >
-                🎤
-              </button>
-            </>
-          )}
-        </div>
+          style={{ ...reset, flex: "1 1 0", width: "auto", height: "100%", fontSize: 16, color: "inherit" }}
+        />
+
+        {(q || active) && (
+          <button type="button" onClick={clearAll} aria-label="Clear search" style={{ ...smallBtn, color: "var(--ink-soft)" }}>✕</button>
+        )}
+
+        {SR && (
+          <>
+            <button
+              type="button"
+              onClick={() => setVoiceLang((l) => (l === "en-US" ? "ur-PK" : "en-US"))}
+              aria-label="Voice language"
+              style={{ ...smallBtn, width: "auto", flex: "0 0 auto", padding: "0 7px", height: 26, fontSize: 11, fontWeight: 800, border: "1.5px solid var(--line)" }}
+            >
+              {voiceLang === "en-US" ? "EN" : "اردو"}
+            </button>
+            <button
+              type="button" onClick={toggleVoice} aria-label={listening ? "Stop voice search" : "Voice search"}
+              style={{ ...smallBtn, background: listening ? "#fee2e2" : "transparent" }}
+            >
+              🎤
+            </button>
+          </>
+        )}
 
         <button
           type="button"
           onClick={() => doSearch(q, { ai: aiMode, save: true })}
           disabled={busy || !q.trim()}
-          className="btn btn-primary"
+          aria-label="Search"
           style={{
-            padding: "0 16px", minHeight: 48, borderRadius: 14, fontWeight: 800, flexShrink: 0,
-            cursor: busy || !q.trim() ? "not-allowed" : "pointer", opacity: !q.trim() ? 0.6 : 1,
+            ...reset, width: 38, height: 38, flex: "0 0 38px", borderRadius: 999, background: "var(--teal)", color: "#fff",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            cursor: busy || !q.trim() ? "default" : "pointer", opacity: !q.trim() ? 0.65 : 1,
           }}
         >
-          {busy ? "…" : "Search"}
+          {busy ? (
+            <span style={{ fontWeight: 800 }}>…</span>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="16.5" y1="16.5" x2="21" y2="21" />
+            </svg>
+          )}
         </button>
       </div>
 
@@ -453,7 +462,7 @@ export default function SmartSearch({ loadProducts, categories, onResults, onCle
             <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", textTransform: "uppercase" }}>Recent searches</span>
             <button
               type="button" onClick={() => { setRecent([]); writeRecent([]); }}
-              style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 12, color: "var(--danger)", fontWeight: 700 }}
+              style={{ ...reset, cursor: "pointer", fontSize: 12, color: "var(--danger)", fontWeight: 700 }}
             >
               Clear
             </button>
@@ -461,7 +470,7 @@ export default function SmartSearch({ loadProducts, categories, onResults, onCle
           {recent.map((r) => (
             <button
               key={r} type="button" onClick={() => { setQ(r); doSearch(r, { save: true }); }}
-              style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 8px", border: "none", background: "transparent", cursor: "pointer", fontSize: 14, borderRadius: 8 }}
+              style={{ ...reset, display: "block", width: "100%", textAlign: "left", padding: "10px 8px", cursor: "pointer", fontSize: 14, borderRadius: 8 }}
             >
               🕘 {r}
             </button>
