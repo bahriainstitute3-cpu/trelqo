@@ -193,15 +193,32 @@ export default function Home() {
   // -------------------------------------------------------
 
   function loadHomeData() {
-    const tasks = [
-      listProducts({ featured: true, max: 24 }).then(setFeatured),
-      listProducts({ max: 120 })
-        .then(setNewArrivals)
-        .finally(() => setLoading(false)),
-      listCategories().then((cats) =>
-        setCategories(cats.filter((c) => c.active))
-      ),
-    ];
+    const tasks = [];
+
+    // Reuse cached data immediately; only fetch missing datasets.
+    if (!cachedFeatured || cachedFeatured.length === 0) {
+      tasks.push(
+        listProducts({ featured: true, max: 24 }).then(setFeatured)
+      );
+    }
+
+    if (!cachedLatest || cachedLatest.length === 0) {
+      tasks.push(
+        listProducts({ max: 120 })
+          .then(setNewArrivals)
+          .finally(() => setLoading(false))
+      );
+    } else {
+      setLoading(false);
+    }
+
+    if (!cachedCats || cachedCats.length === 0) {
+      tasks.push(
+        listCategories().then((cats) =>
+          setCategories(cats.filter((c) => c.active))
+        )
+      );
+    }
 
     tasks.forEach((t) => t.catch((e) => setError(e.message)));
   }
@@ -519,15 +536,25 @@ export default function Home() {
         @media (max-width: 767px) {
 
           .sh-main {
-            padding: 14px 12px 28px !important;
+            padding: 10px 12px 28px !important;
+          }
+
+          .sh-search-row {
+            margin-top: 2px;
           }
 
           .sh-search-shell {
             background: #fff;
-            border: 1.5px solid var(--line);
-            border-radius: 18px;
-            padding: 8px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+            border: 1px solid rgba(15, 118, 110, 0.12);
+            border-radius: 20px;
+            padding: 7px;
+            min-height: 58px;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.09);
+          }
+
+          .sh-search-shell:focus-within {
+            border-color: var(--teal);
+            box-shadow: 0 6px 20px rgba(15, 118, 110, 0.14);
           }
 
           .sh-search-shell input {

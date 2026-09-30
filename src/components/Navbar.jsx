@@ -288,6 +288,101 @@ export default function Navbar() {
           cursor: pointer;
           color: inherit;
         }
+
+        /* Mobile header inspired by the supplied ShopHub reference. */
+        @media (max-width: 767px) {
+          .shop-topbar { display: none !important; }
+          .sh-mainbar {
+            position: relative !important;
+            display: grid !important;
+            grid-template-columns: 44px minmax(0, 1fr) 44px;
+            grid-template-rows: 56px auto;
+            align-items: center !important;
+            column-gap: 8px !important;
+            row-gap: 12px !important;
+            padding: 18px 16px 18px !important;
+            background: #064e46 !important;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          .sh-mobile-brand {
+            grid-column: 2;
+            grid-row: 1;
+            justify-self: center;
+            min-width: 0;
+            max-width: 100%;
+            gap: 7px !important;
+            font-size: 25px !important;
+            line-height: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .sh-mobile-brand .navbar-logo { width: 34px; height: 34px; object-fit: contain; }
+          .sh-mobile-categories { display: none !important; }
+          .sh-navbar-search {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: none !important;
+          }
+          .sh-search-form { width: 100%; }
+          .sh-search-input-wrap {
+            min-width: 0;
+            min-height: 54px !important;
+            padding: 0 16px !important;
+            border: 1px solid #e5e7eb;
+            border-right: 0;
+            border-radius: 16px 0 0 16px !important;
+          }
+          .sh-search-input-wrap input { font-size: 16px !important; }
+          .sh-search-form > button {
+            min-height: 54px !important;
+            padding: 0 18px !important;
+            border-radius: 0 16px 16px 0 !important;
+            background: #fff !important;
+            color: #064e46 !important;
+            border: 1px solid #e5e7eb !important;
+            border-left: 0 !important;
+            font-size: 21px;
+          }
+          .sh-mobile-notification { display: none !important; }
+          .sh-main-actions { display: contents !important; }
+          .sh-main-cart {
+            display: flex !important;
+            position: absolute !important;
+            top: 27px;
+            right: 16px;
+            width: 40px;
+            height: 40px;
+            justify-content: center;
+            align-items: center;
+            color: #fff !important;
+            font-size: 0 !important;
+            z-index: 2;
+          }
+          .sh-main-cart > span { font-size: 25px !important; }
+          .sh-main-cart > span > span { font-size: 11px !important; }
+          .sh-mobile-menu-toggle {
+            display: flex !important;
+            position: absolute !important;
+            left: 16px;
+            top: 27px;
+            width: 40px;
+            height: 40px;
+            align-items: center;
+            justify-content: center;
+            padding: 0 !important;
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            z-index: 2;
+            font-size: 27px;
+          }
+          .sh-mobile-menu-toggle span { color: #fff !important; font-size: 27px !important; }
+          .sh-main-actions > .sh-topbar-hide-mobile,
+          .sh-main-actions > .btn { display: none !important; }
+        }
       `}</style>
 
       {/* Top thin bar */}
@@ -323,7 +418,7 @@ export default function Navbar() {
 
       {/* Main bar — logo, categories, search + live suggestions, account/wishlist/cart */}
       <div
-        className="container"
+        className="container sh-mainbar"
         style={{
           display: "flex",
           alignItems: "center",
@@ -335,7 +430,7 @@ export default function Navbar() {
         }}
       >
         {/* Logo + name */}
-        <Link to="/" className="display navbar-brand" style={{ fontSize: 22, color: "#fff", whiteSpace: "nowrap", fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
+        <Link to="/" className="display navbar-brand sh-mobile-brand" style={{ fontSize: 22, color: "#fff", whiteSpace: "nowrap", fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
           {logoSrc ? (
             <img
               src={logoSrc}
@@ -350,7 +445,7 @@ export default function Navbar() {
         </Link>
 
         {/* CATEGORIES dropdown */}
-        <div ref={categoriesRef} style={{ position: "relative", flex: "0 0 auto" }}>
+        <div ref={categoriesRef} className="sh-mobile-categories" style={{ position: "relative", flex: "0 0 auto" }}>
           <button
             type="button"
             onClick={() => setCategoriesOpen((o) => !o)}
@@ -391,9 +486,9 @@ export default function Navbar() {
         </div>
 
         {/* Search bar with live "as you type" suggestions */}
-        <div ref={searchWrapRef} style={{ position: "relative", flex: "1 1 260px", minWidth: 220, maxWidth: 640 }}>
-          <form onSubmit={onSearch} style={{ display: "flex" }}>
-            <div style={{ flex: 1, display: "flex", alignItems: "center", background: "#fff", borderRadius: "10px 0 0 10px", padding: "0 14px", minHeight: 44 }}>
+        <div ref={searchWrapRef} className="sh-navbar-search" style={{ position: "relative", flex: "1 1 260px", minWidth: 220, maxWidth: 640 }}>
+          <form className="sh-search-form" onSubmit={onSearch} style={{ display: "flex" }}>
+            <div className="sh-search-input-wrap" style={{ flex: 1, display: "flex", alignItems: "center", background: "#fff", borderRadius: "10px 0 0 10px", padding: "0 14px", minHeight: 44 }}>
               <input
                 type="text"
                 value={term}
@@ -461,7 +556,7 @@ export default function Navbar() {
         </div>
 
         {/* Notification bell — kept mounted on every screen size */}
-        <NotificationBell />
+        <div className="sh-mobile-notification"><NotificationBell /></div>
 
         {/* RIGHT: Wishlist, Cart, Account/Login.
             NEW — Wishlist / Account / Logout are hidden on mobile+tablet via
@@ -469,7 +564,7 @@ export default function Navbar() {
             hamburger menu below, so this stops the top corner being
             cramped. Cart, Login and the hamburger button itself stay
             visible on every screen size. */}
-        <div style={{ display: "flex", alignItems: "center", gap: 18, marginLeft: "auto" }}>
+        <div className="sh-main-actions" style={{ display: "flex", alignItems: "center", gap: 18, marginLeft: "auto" }}>
           <Link to="/wishlist" className="sh-topbar-hide-mobile" style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "#fff", fontSize: 11, fontWeight: 700, textDecoration: "none" }}>
             <span style={{ fontSize: 20 }}>♡</span>
             {labels.wishlist}
@@ -478,7 +573,7 @@ export default function Navbar() {
           <Link
   to="/cart"
   aria-label="Cart"
-  className="sh-topbar-hide-mobile"
+  className="sh-main-cart"
   style={{display: "flex", flexDirection: "column", alignItems: "center", color: "#fff", fontSize: 11, fontWeight: 700, textDecoration: "none", position: "relative" }}>
             <span style={{ fontSize: 20, position: "relative" }}>
               🛒
@@ -516,7 +611,7 @@ export default function Navbar() {
 
           <button
             ref={menuButtonRef}
-            className="mobile-menu-button"
+            className="mobile-menu-button sh-mobile-menu-toggle"
             aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
@@ -618,33 +713,7 @@ export default function Navbar() {
           <span>🔔</span>
           <small>Notification</small>
         </Link>
-        <Link to="/cart" aria-label={`Cart${itemCount > 0 ? ` (${itemCount})` : ""}`}>
-          <span style={{ position: "relative", display: "inline-flex" }}>
-            🛒
-            {itemCount > 0 && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: -7,
-                  right: -11,
-                  minWidth: 16,
-                  height: 16,
-                  padding: "0 4px",
-                  borderRadius: 999,
-                  background: "var(--berry, #e11d48)",
-                  color: "#fff",
-                  fontSize: 10,
-                  lineHeight: "16px",
-                  fontWeight: 800,
-                  textAlign: "center",
-                }}
-              >
-                {itemCount}
-              </span>
-            )}
-          </span>
-          <small>Cart</small>
-        </Link>
+
         <Link to="/profile">
           <span>👤</span>
           <small>Profile</small>
