@@ -5,6 +5,7 @@ import { canAccessSettings, isPrivilegedEmail, isSellerEmail, normalizeEmail } f
 import { getProductPermission } from "../lib/permissions";
 import { clearWishlistCache } from "../lib/wishlist";
 import { getSellerProfileByUserId } from "../lib/sellers";
+import { unregisterPushToken } from "../lib/push";
 
 const AuthContext = createContext(null);
 
@@ -244,6 +245,7 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    await unregisterPushToken(); // stop pushes for this user on this device
     setProfile(null);
     setUser(null);
     clearWishlistCache();

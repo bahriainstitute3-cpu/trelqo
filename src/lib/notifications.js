@@ -1,5 +1,6 @@
 // src/lib/notifications.js
-import { db } from "./firebase";
+import { db, loadAuth } from "./firebase";
+import { requestPushForNotification } from "./push";
 
 import {
   collection,
@@ -26,15 +27,23 @@ const NOTIF_COLLECTION = "notifications";
  */
 export async function createNotification({ recipientEmail, type, title, message, link = "/" }) {
   if (!recipientEmail) return;
-  await addDoc(collection(db, NOTIF_COLLECTION), {
+  let createdBy = "";
+  try {
+    const { auth } = await loadAuth();
+    createdBy = auth.currentUser?.uid || "";
+  } catch {}
+  const ref = await addDoc(collection(db, NOTIF_COLLECTION), {
     recipientEmail: recipientEmail.toLowerCase().trim(),
     type,
     title,
     message,
     link,
     read: false,
+    createdBy,
     createdAt: serverTimestamp(),
   });
+  // Also deliver as a real push (works when the app is closed). Never blocks.
+  requestPushForNotification(ref.id);
 }
 
 export async function notifyAdmins({ type, title, message, link = "/admin" }) {

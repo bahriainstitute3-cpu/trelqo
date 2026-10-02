@@ -49,6 +49,9 @@ export default defineConfig({
 
       workbox: {
         cleanupOutdatedCaches: true,
+        // Background push handler (public/push-sw.js) - lets notifications
+        // arrive even when the app / browser is closed.
+        importScripts: ["/push-sw.js"],
         navigateFallback: "/index.html",
         globPatterns: [
           "**/*.{js,css,html,ico,svg,webp}"

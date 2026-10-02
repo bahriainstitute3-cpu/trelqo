@@ -586,3 +586,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .category-tile { flex: 0 0 92px; }
   .mobile-bottom-nav a small, .mobile-bottom-nav button small { font-size: 10px; }
 }
+/* Notifications - touch-friendly on phones/tablets */
+.notifications-install-hint { margin-bottom: 14px; padding: 12px 14px; font-size: 13px; color: var(--ink-soft); }
+@media (max-width: 640px) {
+  .notifications-page-actions .btn { min-height: 44px; }
+  .notification-item { min-height: 64px; }
+}

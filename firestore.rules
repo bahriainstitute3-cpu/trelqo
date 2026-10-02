@@ -164,6 +164,17 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Web-push device tokens (FCM). A signed-in user can only save/remove
+    // their own device; the server reads them with the Admin SDK, so the
+    // browser can never list anyone's tokens.
+    match /pushTokens/{token} {
+      allow create, update: if isSignedIn() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.email == request.auth.token.email.lower();
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow read: if false;
+    }
+
     // Only bahriainstitute3@gmail.com can add reviews (matches the "Add
     // Review" button visibility in src/components/Reviews.jsx) — this used
     // to be a separate, invalid rules block sitting outside the service

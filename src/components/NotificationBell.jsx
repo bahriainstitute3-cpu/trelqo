@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { listenToNotifications, markAllNotificationsRead } from "../lib/notifications";
+import { registerPushToken } from "../lib/push";
 
 // Plays a short two-tone "ding" using the Web Audio API — no audio file
 // needed, so it costs nothing extra to load and works instantly.
@@ -84,6 +85,12 @@ export default function NotificationBell() {
     return () => unsubscribe();
   }, [user?.email]);
 
+  // If the user already allowed notifications, make sure this device's push
+  // token is saved (runs on every login / app start).
+  useEffect(() => {
+    if (user?.uid) registerPushToken(user);
+  }, [user?.uid]);
+
   useEffect(() => {
     const openPanel = () => setIsOpen((prev) => !prev);
     window.addEventListener("toggle-notifications-panel", openPanel);
@@ -109,7 +116,7 @@ export default function NotificationBell() {
       <button
         className="navbar-bell-btn"
         onClick={() => {
-          if ("Notification" in window && Notification.permission === "default") Notification.requestPermission().catch(() => {});
+          if ("Notification" in window && Notification.permission === "default") Notification.requestPermission().then((p) => { if (p === "granted") registerPushToken(user); }).catch(() => {});
           setIsOpen((p) => !p);
         }}
         style={{

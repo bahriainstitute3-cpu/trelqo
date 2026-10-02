@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { listenToNotifications, markAllNotificationsRead } from "../lib/notifications";
+import { registerPushToken } from "../lib/push";
 
 function formatNotificationDate(value) {
   if (!value?.toDate) return "";
@@ -17,6 +18,7 @@ export default function Notifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [, setPermissionTick] = useState(0); // re-render after the permission prompt
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,13 +42,23 @@ export default function Notifications() {
 
   const unreadCount = notifications.filter((notification) => !notification.read).length;
   const canEnableBrowserAlerts = typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted";
+  // iPhone/iPad only allow push once the site is added to the Home Screen.
+  const needsIosInstall =
+    typeof window !== "undefined" &&
+    /iphone|ipad|ipod/i.test(navigator.userAgent) &&
+    !("Notification" in window) &&
+    !window.navigator.standalone;
 
   async function handleMarkAllRead() {
     await markAllNotificationsRead(notifications);
   }
 
   async function enableBrowserAlerts() {
-    if ("Notification" in window) await Notification.requestPermission();
+    if ("Notification" in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") await registerPushToken(user);
+      setPermissionTick((n) => n + 1);
+    }
   }
 
   function openNotification(notification) {
@@ -74,6 +86,12 @@ export default function Notifications() {
           )}
         </div>
       </div>
+
+      {needsIosInstall && (
+        <div className="card notifications-install-hint">
+          To get notifications on iPhone: tap Share, then "Add to Home Screen", and open Trelqo from the Home Screen icon.
+        </div>
+      )}
 
       {loading ? (
         <div className="card notifications-empty">Loading notifications...</div>
