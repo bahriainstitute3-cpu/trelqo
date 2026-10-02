@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { buildIndex, runSearch, aiParse, chipsFor, getPrice } from "../lib/smartSearch";
+import { buildIndex, runSearch, aiParse, chipsFor, getPrice, norm } from "../lib/smartSearch";
 
 const RECENT_KEY = "trelqo _recent_searches";
 const LIVE_DELAY = 250; // ms after typing stops
@@ -17,21 +17,39 @@ function writeRecent(list) {
 }
 
 /* ------------------------------------------------------------------
-   LOCAL FAST SEARCH  (name + category + brand/tags + description)
+   LOCAL FAST SEARCH  (Amazon / Daraz style)
+   Matches: name, Tags/Keywords (added while adding a product), brand,
+   category/subcategory, colors/variants/sku, description.
+   - tags are split on comma, so "airpods, handsfree, ear buds" = 3 keywords
+   - word-start matching while typing ("wire" -> wireless)
+   - plural/singular ("earbud" = "earbuds"), "t shirt" = "tshirt"
+   - typo tolerance on every word, not only when nothing matched
+   - in-stock + popular products rank higher
 ------------------------------------------------------------------ */
-
-const norm = (s) =>
-  String(s || "")
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 
 const STOP = new Set([
   "under", "below", "above", "over", "price", "rs", "pkr", "tak", "se", "kam", "zyada", "ziada",
   "in", "for", "the", "a", "an", "of", "and", "with", "wala", "wali", "ka", "ki", "ke", "ko", "me", "mein",
   "to", "than", "less", "more", "max", "min", "upto", "up",
+  // roman-urdu filler words ("mujhe phone chahiye")
+  "mujhe", "mujhy", "mjhe", "mera", "meri", "mere", "hume", "humein", "chahiye", "chahiyay", "chahye", "chaiye",
+  "chahie", "hai", "hain", "ho", "hon", "par", "pe", "wale", "aur", "koi", "kuch", "ek", "aik", "jo",
+  "dikhao", "dikha", "batao", "bata", "do", "dena", "de", "dijiye", "karo", "kar", "lena", "lo", "dhoondo", "dhundo",
+  "want", "need", "looking", "find", "show", "buy", "best", "please", "plz", "pls", "i", "my", "me",
 ]);
+
+const stem = (w) => (w.length > 3 && w.endsWith("s") && !w.endsWith("ss") ? w.slice(0, -1) : w);
+const uniq = (arr) => Array.from(new Set(arr.filter(Boolean)));
+const wordsOf = (s) => (s ? s.split(" ").filter(Boolean) : []);
+
+// "airpods, handsfree; ear buds\n#wireless" -> ["airpods","handsfree","ear buds","wireless"]
+function splitTags(v) {
+  return []
+    .concat(v == null ? [] : v)
+    .flatMap((x) => String(x ?? "").split(/[,;|\n#،]+/))
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 function buildLocalIndex(list, categories) {
   const catMap = new Map();
@@ -42,32 +60,62 @@ function buildLocalIndex(list, categories) {
     }
   });
 
-  return (Array.isArray(list) ? list : []).map((p) => {
+  const out = (Array.isArray(list) ? list : []).map((p) => {
     const catVals = [p.category, p.categoryId, p.categoryName, p.subcategory, p.subCategory, p.type]
       .concat(Array.isArray(p.categories) ? p.categories : [])
       .filter(Boolean)
       .map((v) => (typeof v === "object" ? v.name || v.id : catMap.get(String(v)) || v));
 
     const name = norm(p.name || p.title);
+    const tagList = splitTags([p.tags, p.keywords]); // original text (for suggestions)
+    const tagPhrases = uniq(tagList.map(norm));
+    const tags = tagPhrases.join(" ");
+    const brand = norm(p.brand);
     const cat = norm(catVals.join(" "));
     const extra = norm(
-      [p.brand, Array.isArray(p.tags) ? p.tags.join(" ") : p.tags, p.sku, p.keywords]
+      [p.sku, Array.isArray(p.colors) ? p.colors.join(" ") : p.colors, p.variants, p.condition]
         .filter(Boolean)
         .join(" ")
     );
     const desc = norm(p.description || p.desc || p.details);
     const price = Number(getPrice(p)) || 0;
 
+    const nameWords = wordsOf(name);
+    const tagWords = wordsOf(tags);
+    const brandWords = wordsOf(brand);
+    const catWords = wordsOf(cat);
+    const extraWords = wordsOf(extra);
+
+    const stockNum = Number(p.stock);
+    const inStock = !(p.stock != null && p.stock !== "" && Number.isFinite(stockNum) && stockNum <= 0);
+    const sold = Number(p.soldCount) || 0;
+    const ratingCount = Number(p.ratingCount) || 0;
+    const rating = Number(p.ratingAvg) || 0;
+    const pop = Math.min(3, Math.log10(1 + sold)) + (ratingCount > 0 ? (Math.min(rating, 5) / 5) * 1.5 : 0);
+
     return {
       p,
       name,
       cat,
-      extra,
       desc,
       price,
-      words: (name + " " + cat + " " + extra).split(" ").filter(Boolean),
+      tagList,
+      tagPhrases,
+      nameWords,
+      tagWords,
+      brandWords,
+      catWords,
+      extraWords,
+      words: uniq([...nameWords, ...tagWords, ...brandWords, ...catWords, ...extraWords]),
+      // "t shirt" / "ear buds" without spaces, so "tshirt" / "earbuds" still match
+      compact: [name, ...tagPhrases, brand].join("|").replace(/ /g, ""),
+      inStock,
+      pop,
     };
   });
+
+  out.sugg = buildSuggestions(out, categories);
+  return out;
 }
 
 function parseQuery(query) {
@@ -115,13 +163,53 @@ function lev(a, b) {
   return prev[n];
 }
 
+// best score of token `t` against one field's words:
+// exact word / plural = ex, word STARTS with t = pre, t inside a word = sub
+function wordScore(words, t, ex, pre, sub) {
+  const ts = stem(t);
+  let best = 0;
+  for (const w of words) {
+    if (w === t || stem(w) === ts) return ex;
+    if (t.length >= 2 && w.startsWith(t)) best = Math.max(best, pre);
+    else if (t.length >= 3 && w.includes(t)) best = Math.max(best, sub);
+  }
+  return best;
+}
+
 function tokenScore(e, t) {
-  let s = 0;
-  if (e.name.includes(t)) s = (" " + e.name).includes(" " + t) ? 12 : 8;
-  if (e.cat.includes(t)) s = Math.max(s, (" " + e.cat).includes(" " + t) ? 7 : 5);
-  if (e.extra.includes(t)) s = Math.max(s, 5);
-  if (e.desc.includes(t)) s = Math.max(s, 2);
+  let s = wordScore(e.nameWords, t, 12, 10, 6);
+  s = Math.max(s, wordScore(e.tagWords, t, 11, 9, 5)); // seller's Tags / Keywords
+  s = Math.max(s, wordScore(e.brandWords, t, 9, 7, 4));
+  s = Math.max(s, wordScore(e.catWords, t, 7, 6, 4));
+  s = Math.max(s, wordScore(e.extraWords, t, 5, 4, 3));
+  if (!s && t.length >= 4 && e.compact.includes(t)) s = 5; // "tshirt" vs "t shirt"
+  if (!s && t.length >= 3 && (" " + e.desc).includes(" " + t)) s = 2;
   return s;
+}
+
+function fuzzyScore(e, t) {
+  if (t.length < 4) return 0;
+  const lim = t.length >= 7 ? 2 : 1;
+  for (const w of e.words) {
+    if (w.length >= 3 && Math.abs(w.length - t.length) <= lim && lev(t, w) <= lim) return 4;
+  }
+  return 0;
+}
+
+// whole-phrase bonuses: a seller keyword that equals / contains what the
+// shopper typed should beat a random word match in the description.
+function phraseBonus(e, tokens, phrase) {
+  let b = 0;
+  if (tokens.length > 1 && e.name.includes(phrase)) b += 10;
+  if (e.name.startsWith(phrase)) b += 4;
+  if (e.name === phrase) b += 6;
+  let tagHit = 0;
+  for (const tp of e.tagPhrases) {
+    if (tp === phrase) { tagHit = Math.max(tagHit, 14); continue; }
+    if (tp.includes(phrase)) { tagHit = Math.max(tagHit, 8); continue; }
+    if (tokens.length > 1 && tokens.every((t) => tp.includes(t) || tp.includes(stem(t)))) tagHit = Math.max(tagHit, 6);
+  }
+  return b + tagHit;
 }
 
 const rs = (n) => "Rs " + Number(n).toLocaleString("en-PK");
@@ -135,52 +223,41 @@ function localSearch(index, query) {
   if (tokens.length === 0) {
     scored = index.map((e) => ({ e, s: 0 }));
   } else {
-    // 1) every word must match somewhere
-    scored = [];
+    const rows = [];
     for (const e of index) {
       let total = 0;
-      let ok = true;
+      let matched = 0;
+      let fuzzy = false;
       for (const t of tokens) {
-        const s = tokenScore(e, t);
-        if (!s) { ok = false; break; }
-        total += s;
+        let s = tokenScore(e, t);
+        if (!s) {
+          s = fuzzyScore(e, t); // typo tolerance on every word
+          if (s) fuzzy = true;
+        }
+        if (s) { total += s; matched++; }
       }
-      if (ok) {
-        if (tokens.length > 1 && e.name.includes(phrase)) total += 10;
-        scored.push({ e, s: total });
-      }
+      if (matched) rows.push({ e, s: total, matched, fuzzy });
     }
 
-    // 2) any word matches
-    if (scored.length === 0 && tokens.length > 1) {
-      for (const e of index) {
-        let total = 0;
-        for (const t of tokens) total += tokenScore(e, t);
-        if (total) scored.push({ e, s: total });
-      }
+    let full = rows.filter((r) => r.matched === tokens.length);
+    const exactOnly = full.filter((r) => !r.fuzzy);
+    if (exactOnly.length) full = exactOnly; // typo matches only when nothing matches exactly
+    if (full.length) {
+      scored = full;
+      if (full.every((r) => r.fuzzy)) note = "Showing similar results (spelling matched loosely).";
+    } else {
+      // not every word matched anywhere -> closest results (most words first)
+      scored = rows.map((r) => ({ ...r, s: r.s + r.matched * 6 }));
       if (scored.length) note = "No exact match — showing closest results.";
     }
-
-    // 3) typo tolerance
-    if (scored.length === 0) {
-      for (const e of index) {
-        let total = 0;
-        let ok = true;
-        for (const t of tokens) {
-          if (t.length < 4) { if (!tokenScore(e, t)) { ok = false; break; } total += 2; continue; }
-          const lim = t.length >= 7 ? 2 : 1;
-          if (e.words.some((w) => Math.abs(w.length - t.length) <= lim && lev(t, w) <= lim)) total += 5;
-          else if (tokenScore(e, t)) total += 2;
-          else { ok = false; break; }
-        }
-        if (ok && total) scored.push({ e, s: total });
-      }
-      if (scored.length) note = "Showing similar results (spelling matched loosely).";
-    }
+    scored.forEach((r) => { r.s += phraseBonus(r.e, tokens, phrase); });
   }
 
   if (min !== null) scored = scored.filter((x) => x.e.price >= min);
   if (max !== null) scored = scored.filter((x) => x.e.price <= max);
+
+  // in-stock and popular products first (Amazon / Daraz style)
+  scored.forEach((x) => { x.s += x.e.pop - (x.e.inStock ? 0 : 6); });
 
   if (sort === "asc") scored.sort((a, b) => a.e.price - b.e.price);
   else if (sort === "desc") scored.sort((a, b) => b.e.price - a.e.price);
@@ -195,6 +272,50 @@ function localSearch(index, query) {
   return { products: scored.map((x) => x.e.p), chips, note };
 }
 
+/* ------------------------------------------------------------------
+   SEARCH SUGGESTIONS (dropdown while typing): product names, seller
+   keywords, brands and categories that start with what was typed.
+------------------------------------------------------------------ */
+
+function buildSuggestions(entries, categories) {
+  const seen = new Map();
+  const add = (label, type) => {
+    const text = String(label || "").trim();
+    if (!text || text.length > 80) return;
+    const key = norm(text);
+    if (!key || key.length < 2) return;
+    const cur = seen.get(key);
+    if (cur) { cur.w += 1; return; }
+    seen.set(key, { label: text, key, words: key.split(" "), type, w: 1 });
+  };
+  entries.forEach((e) => {
+    add(e.p.name || e.p.title, "product");
+    e.tagList.forEach((t) => add(t, "keyword"));
+    add(e.p.brand, "brand");
+  });
+  (categories || []).forEach((c) => add(c && c.name, "category"));
+  return Array.from(seen.values());
+}
+
+function getSuggestions(sugg, q, limit = 8) {
+  const nq = norm(q);
+  if (!nq || !Array.isArray(sugg)) return [];
+  const qt = nq.split(" ");
+  const out = [];
+  for (const s of sugg) {
+    if (s.key === nq) continue;
+    let r = 0;
+    if (s.key.startsWith(nq)) r = 3;
+    else if (qt.every((t) => s.words.some((w) => w.startsWith(t)))) r = 2;
+    else if (nq.length >= 3 && s.key.includes(nq)) r = 1;
+    if (r) out.push({ ...s, r });
+  }
+  out.sort((a, b) => b.r - a.r || b.w - a.w || a.label.length - b.label.length);
+  return out.slice(0, limit);
+}
+
+const SUGG_TYPE_LABEL = { product: "", keyword: "", brand: "Brand", category: "Category" };
+
 /* ------------------------------------------------------------------ */
 
 export default function SmartSearch({ loadProducts, categories, onResults, onClear, active }) {
@@ -205,6 +326,9 @@ export default function SmartSearch({ loadProducts, categories, onResults, onCle
   const [recent, setRecent] = useState(readRecent);
   const [listening, setListening] = useState(false);
   const [voiceLang, setVoiceLang] = useState("en-US");
+  const [suggestions, setSuggestions] = useState([]);
+  const [activeIdx, setActiveIdx] = useState(-1);
+  const [idxReady, setIdxReady] = useState(0);
 
   const localRef = useRef(null);
   const libRef = useRef(null);
@@ -240,10 +364,10 @@ export default function SmartSearch({ loadProducts, categories, onResults, onCle
     writeRecent(next);
   }
 
-  async function doSearch(text, { ai = false, save = false } = {}) {
+  async function doSearch(text, { ai = false, save = false, live = false } = {}) {
     const query = String(text || "").trim();
     if (!query) return;
-    setFocused(false);
+    if (!live) setFocused(false);
     setBusy(true);
     const id = ++reqRef.current;
     try {
@@ -293,10 +417,22 @@ export default function SmartSearch({ loadProducts, categories, onResults, onCle
       if (active) onClear();
       return;
     }
-    const h = setTimeout(() => doSearch(t), LIVE_DELAY);
+    const h = setTimeout(() => doSearch(t, { live: true }), LIVE_DELAY);
     return () => clearTimeout(h);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, aiMode, listening]);
+
+  // suggestions dropdown while typing (normal mode)
+  useEffect(() => {
+    const t = q.trim();
+    if (!focused || aiMode || listening || t.length < 1) {
+      setSuggestions([]);
+      return;
+    }
+    const idx = localRef.current && localRef.current.idx;
+    setSuggestions(idx ? getSuggestions(idx.sugg, t) : []);
+    setActiveIdx(-1);
+  }, [q, focused, aiMode, listening, idxReady]);
 
   // "Back to Home" from the results page -> clear the box
   useEffect(() => {
@@ -332,6 +468,14 @@ export default function SmartSearch({ loadProducts, categories, onResults, onCle
     inputRef.current?.focus();
   }
 
+  function pickSuggestion(label) {
+    setQ(label);
+    setSuggestions([]);
+    setFocused(false);
+    doSearch(label, { save: true });
+    inputRef.current?.blur();
+  }
+
   function toggleVoice() {
     if (!SR) return;
     if (listening) {
@@ -362,6 +506,7 @@ export default function SmartSearch({ loadProducts, categories, onResults, onCle
   }
 
   const showRecent = focused && !busy && q.trim() === "" && recent.length > 0;
+  const showSuggestions = focused && !aiMode && !listening && q.trim() !== "" && suggestions.length > 0;
 
   // hard reset so global button/input CSS can't break the layout
   const reset = {
@@ -393,9 +538,16 @@ export default function SmartSearch({ loadProducts, categories, onResults, onCle
           aria-label="Search products"
           placeholder={listening ? "Listening… speak now" : "Search in Trelqo"}
           onChange={(e) => { if (aiMode) setAiMode(false); setQ(e.target.value); }}
-          onFocus={() => { setFocused(true); loadProducts().then(() => getLocalIndex()).catch(() => {}); }}
+          onFocus={() => { setFocused(true); loadProducts().then(() => getLocalIndex()).then(() => setIdxReady((n) => n + 1)).catch(() => {}); }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); doSearch(q, { ai: aiMode, save: true }); e.currentTarget.blur(); }
+            if (e.key === "ArrowDown" && suggestions.length) { e.preventDefault(); setActiveIdx((i) => (i + 1) % suggestions.length); return; }
+            if (e.key === "ArrowUp" && suggestions.length) { e.preventDefault(); setActiveIdx((i) => (i <= 0 ? suggestions.length - 1 : i - 1)); return; }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              if (activeIdx >= 0 && suggestions[activeIdx]) { pickSuggestion(suggestions[activeIdx].label); return; }
+              doSearch(q, { ai: aiMode, save: true });
+              e.currentTarget.blur();
+            }
             if (e.key === "Escape") setFocused(false);
           }}
           style={{ ...reset, flex: "1 1 0", width: "auto", height: "100%", fontSize: 16, color: "inherit" }}
@@ -448,6 +600,52 @@ export default function SmartSearch({ loadProducts, categories, onResults, onCle
 
       {aiMode && busy && (
         <p style={{ fontSize: 13, marginTop: 8, color: "#7c3aed", fontWeight: 700 }}>✨ Understanding your request…</p>
+      )}
+
+      {showSuggestions && (
+        <div
+          className="card"
+          role="listbox"
+          style={{
+            position: "absolute", left: 0, right: 0, top: "calc(100% + 6px)", zIndex: 30, background: "#fff",
+            borderRadius: 14, padding: 6, maxHeight: "50vh", overflowY: "auto", boxShadow: "0 12px 32px rgba(0,0,0,0.14)",
+          }}
+        >
+          {suggestions.map((sg, i) => {
+            const typed = q.trim();
+            const starts = sg.label.toLowerCase().startsWith(typed.toLowerCase());
+            return (
+              <button
+                key={sg.key}
+                type="button"
+                role="option"
+                aria-selected={i === activeIdx}
+                onMouseEnter={() => setActiveIdx(i)}
+                onClick={() => pickSuggestion(sg.label)}
+                style={{
+                  ...reset, display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left",
+                  padding: "0 10px", minHeight: 44, cursor: "pointer", fontSize: 14, borderRadius: 10,
+                  background: i === activeIdx ? "#f1f5f4" : "transparent",
+                }}
+              >
+                <span aria-hidden="true" style={{ opacity: 0.55, flex: "0 0 auto" }}>🔍</span>
+                <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {starts ? (
+                    <>
+                      <strong>{sg.label.slice(0, typed.length)}</strong>
+                      {sg.label.slice(typed.length)}
+                    </>
+                  ) : (
+                    sg.label
+                  )}
+                </span>
+                {SUGG_TYPE_LABEL[sg.type] && (
+                  <span style={{ flex: "0 0 auto", fontSize: 11, fontWeight: 700, color: "var(--ink-soft)" }}>{SUGG_TYPE_LABEL[sg.type]}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       )}
 
       {showRecent && (
